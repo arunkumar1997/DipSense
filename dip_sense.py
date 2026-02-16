@@ -15,6 +15,9 @@ from config import (
     VOLUME_MULTIPLIER,
     BUY_THRESHOLD,
     BUY_SMALL_THRESHOLD,
+    SELL_THRESHOLD,
+    SELL_PARTIAL_THRESHOLD,
+    RESISTANCE_WINDOW,
     NEWS_LOOKBACK_DAYS,
     NEGATIVE_KEYWORDS,
 )
@@ -25,6 +28,13 @@ def auto_support(df, window=None):
     if window is None:
         window = SUPPORT_WINDOW
     return df["Low"].tail(window).mean()
+
+
+# -------- AUTO RESISTANCE --------
+def auto_resistance(df, window=None):
+    if window is None:
+        window = RESISTANCE_WINDOW
+    return df["High"].tail(window).mean()
 
 
 # -------- BAD NEWS CHECK --------
@@ -83,9 +93,26 @@ def decide(df, stock):
         else support_holds_result
     )
 
+    # Calculate resistance
+    resistance = auto_resistance(df)
+    resistance_broken_result = close_today >= resistance
+    resistance_broken = (
+        resistance_broken_result.item()
+        if hasattr(resistance_broken_result, "item")
+        else resistance_broken_result
+    )
+
     if has_long_term_bad_news(stock):
         return "AVOID ❌"
 
+    # SELL signals (check first as they take priority)
+    if change_pct >= SELL_THRESHOLD and resistance_broken:
+        return "SELL ✅"
+
+    if SELL_PARTIAL_THRESHOLD <= change_pct < SELL_THRESHOLD and resistance_broken:
+        return "SELL PARTIAL ⚠️"
+
+    # BUY signals
     if not support_holds and high_vol:
         return "WAIT ⏸️"
 
@@ -103,9 +130,12 @@ print("\n" + "=" * 50)
 print("📊 TECHNICAL ANALYSIS PARAMETERS")
 print("=" * 50)
 print(f"Support Window:       {SUPPORT_WINDOW} days")
+print(f"Resistance Window:    {RESISTANCE_WINDOW} days")
 print(f"Volume Multiplier:    {VOLUME_MULTIPLIER}x")
 print(f"Buy Threshold:        {BUY_THRESHOLD}%")
 print(f"Buy Small Threshold:  {BUY_SMALL_THRESHOLD}%")
+print(f"Sell Threshold:       {SELL_THRESHOLD}%")
+print(f"Sell Partial Thresh:  {SELL_PARTIAL_THRESHOLD}%")
 print(f"News Lookback:        {NEWS_LOOKBACK_DAYS} days")
 print(f"Total Stocks:         {len(STOCKS)}")
 print("=" * 50)
@@ -130,7 +160,15 @@ for stock in STOCKS:
         )
         support = round(support_val, 2)
 
-        print(f"{stock:15} | Close: {close:8} | Support: {support:8} | {action}")
+        resistance_val = auto_resistance(df)
+        resistance_val = (
+            resistance_val.item() if hasattr(resistance_val, "item") else resistance_val
+        )
+        resistance = round(resistance_val, 2)
+
+        print(
+            f"{stock:15} | Close: {close:8} | Support: {support:8} | Resistance: {resistance:8} | {action}"
+        )
 
     except Exception as e:
         print(e)

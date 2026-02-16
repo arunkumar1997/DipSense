@@ -15,6 +15,13 @@ VOLUME_MULTIPLIER = float(os.getenv("VOLUME_MULTIPLIER", 1.5))
 BUY_THRESHOLD = float(os.getenv("BUY_THRESHOLD", -3))
 BUY_SMALL_THRESHOLD = float(os.getenv("BUY_SMALL_THRESHOLD", -1))
 
+# Price Rise Thresholds for SELL (in percentage)
+SELL_THRESHOLD = float(os.getenv("SELL_THRESHOLD", 5))
+SELL_PARTIAL_THRESHOLD = float(os.getenv("SELL_PARTIAL_THRESHOLD", 3))
+
+# Resistance Calculation
+RESISTANCE_WINDOW = int(os.getenv("RESISTANCE_WINDOW", 20))
+
 # News Lookback Period (in days)
 NEWS_LOOKBACK_DAYS = int(os.getenv("NEWS_LOOKBACK_DAYS", 3))
 
@@ -70,8 +77,7 @@ STOCKS = [
     "ABB.NS",
     "SIEMENS.NS",
     "CGPOWER.NS",
-    # Auto
-    "TATAMOTORS.NS",
+    # Autos
     "MOTHERSON.NS",
     # IT
     "TCS.NS",
@@ -84,4 +90,6 @@ STOCKS = [
     "NATCOPHARM.NS",
     "FDC.NS",
     "NEULANDLAB.NS",
+    "GOLDBEES.NS",
+    "SILVERBEES.NS",
 ]
